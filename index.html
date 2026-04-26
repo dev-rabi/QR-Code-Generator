@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  body{
+    font-family:system-ui;
+    background:#f8fafc;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+  }
+
+  .container{
+    width:100%;
+    max-width:700px;
+    background:#fff;
+    border:1px solid #e2e8f0;
+    border-radius:20px;
+    padding:20px;
+  }
+
+  h1{text-align:center;margin-bottom:20px}
+
+  label{
+    font-size:13px;
+    font-weight:600;
+    color:#334155;
+    display:block;
+    margin-bottom:6px;
+  }
+
+  /* INPUT Group */
+  .inputGroup{
+    margin-bottom:20px;
+  }
+
+  .inputGroup label{
+    margin-bottom:6px;
+  }
+
+  .inputBox{
+    position:relative;
+    width:100%;
+  }
+
+  .inputBox input{
+    width:100%;
+    padding:12px 38px 12px 12px;
+    border-radius:12px;
+    border:1px solid #e2e8f0;
+    font-size:14px;
+  }
+
+  .inputBox input:focus{
+    outline:none;
+    border-color:#94a3b8;
+  }
+
+  .clearBtn{
+    position:absolute;
+    right:10px;
+    top:50%;
+    transform:translateY(-50%);
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    font-size:14px;
+    cursor:pointer;
+    color:#64748b;
+    background:#f1f5f9;
+  }
+
+  .clearBtn:hover{
+    background:#e2e8f0;
+  }
+
+  /* Generate button */
+  .generate-btn {
+    margin-bottom:20px;
+  }
+
+  button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    background:#0f172a;
+    color:#fff;
+    cursor:pointer;
+    font-weight:500;
+    transition:background 0.2s;
+  }
+
+  button:hover{
+    background:#1e293b;
+  }
+
+  /* Options Row - Space pehle se booked, lekin invisible */
+  .options-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    /* Space booked, content hidden */
+    visibility: visible;
+  }
+  
+  /* Initially hidden - jagah lega lekin dikhega nahi */
+  .options-row.init-hidden .option-field,
+  .options-row.init-hidden .label-with-icon,
+  .options-row.init-hidden select,
+  .options-row.init-hidden label,
+  .options-row.init-hidden .infoIcon {
+    visibility: hidden;
+  }
+  
+  /* Jab generate hoga tab visible */
+  .options-row.generated .option-field,
+  .options-row.generated .label-with-icon,
+  .options-row.generated select,
+  .options-row.generated label,
+  .options-row.generated .infoIcon {
+    visibility: visible;
+  }
+
+  .option-field{
+    flex:1;
+    position: relative;
+  }
+
+  .option-field select{
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #e2e8f0;
+    background:#fff;
+    cursor:pointer;
+    font-size:14px;
+  }
+
+  .infoIcon{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    border:1px solid #94a3b8;
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    font-size:12px;
+    cursor:pointer;
+    color:#64748b;
+    background:#fff;
+    transition:all 0.2s;
+    margin-left:6px;
+  }
+
+  .infoIcon:hover{
+    background:#f1f5f9;
+    border-color:#64748b;
+  }
+
+  .label-with-icon{
+    display:flex;
+    align-items:center;
+    margin-bottom:6px;
+  }
+
+  .popup{
+    display:none;
+    position:absolute;
+    top:65px;
+    left:0;
+    background:#0f172a;
+    color:#fff;
+    padding:10px 12px;
+    border-radius:10px;
+    font-size:12px;
+    width:280px;
+    z-index:10;
+    line-height:1.4;
+  }
+
+  .popup.show{display:block}
+
+  /* QR box */
+  .qr-box{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:360px;
+    background:#f8fafc;
+    border-radius:16px;
+    border:1px dashed #cbd5e1;
+    overflow:hidden;
+    margin-bottom:20px;
+  }
+
+  #qrcode{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    width:100%;
+    height:100%;
+  }
+
+  #qrcode canvas{
+    max-width:92%;
+    max-height:92%;
+  }
+
+  /* Download button - space booked, pehle invisible */
+  .download-spacing {
+    min-height: 52px;
+  }
+  
+  #downloadBtn {
+    display: block;
+    visibility: hidden;
+    margin: 0;
+  }
+  
+  #downloadBtn.generated {
+    visibility: visible;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>QR Code Generator</h1>
+
+<!-- INPUT Group -->
+<div class="inputGroup">
+  <label>Enter text or URL</label>
+  <div class="inputBox">
+    <input type="text" id="text" placeholder="https://example.com">
+    <div class="clearBtn" id="clearBtn">✕</div>
+  </div>
+</div>
+
+<!-- Generate Button -->
+<div class="generate-btn">
+  <button onclick="generateQR()">Generate QR Code</button>
+</div>
+
+<!-- Options Row - Space booked, initially hidden, generate ke baad visible -->
+<div class="options-row init-hidden" id="optionsRow">
+  <div class="option-field">
+    <div class="label-with-icon">
+      <label style="margin:0;">Error Correction</label>
+      <div class="infoIcon" id="infoBtn">i</div>
+    </div>
+    <select id="level">
+      <option value="L">Low (7%)</option>
+      <option value="M" selected>Medium (15%)</option>
+      <option value="Q">Quartile (25%)</option>
+      <option value="H">High (30%)</option>
+    </select>
+    <div class="popup" id="popup">
+      • Low (7%) – smallest QR, best for clean surfaces.<br>
+      • Medium (15%) – default balanced option.<br>
+      • Quartile (25%) – good for printed use.<br>
+      • High (30%) – best for damaged/covered QR.
+    </div>
+  </div>
+  <div class="option-field">
+    <label>Size</label>
+    <select id="size">
+      <option value="150">Small (150px)</option>
+      <option value="200" selected>Medium (200px)</option>
+      <option value="260">Large (260px)</option>
+    </select>
+  </div>
+</div>
+
+<!-- QR Preview Box -->
+<div class="qr-box">
+  <div id="qrcode"></div>
+</div>
+
+<!-- Download button - space booked, initially hidden -->
+<div class="download-spacing">
+  <button id="downloadBtn" onclick="downloadQR()">Download PNG</button>
+</div>
+
+</div>
+
+<script>
+
+let isGenerated=false;
+
+const input=document.getElementById("text");
+const clearBtn=document.getElementById("clearBtn");
+
+// Auto URL detection function
+function autoFixUrl(text) {
+  if(!text || text.trim() === "") return text;
+  
+  let trimmed = text.trim();
+  let lowerTrimmed = trimmed.toLowerCase();
+  
+  const hasProtocol = /^https?:\/\//i.test(lowerTrimmed);
+  const looksLikeUrl = /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/|$|\?|#)/.test(lowerTrimmed) || 
+                       /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(lowerTrimmed);
+  const hasSpace = /\s/.test(lowerTrimmed);
+  const isProbablyEmail = /@/.test(lowerTrimmed) && /\.(com|org|net|in|io|co|edu|gov)/i.test(lowerTrimmed);
+  
+  if(hasProtocol || hasSpace || isProbablyEmail) {
+    if(hasProtocol) {
+      return lowerTrimmed;
+    }
+    return trimmed;
+  }
+  
+  if(looksLikeUrl) {
+    return "https://" + lowerTrimmed;
+  }
+  
+  return trimmed;
+}
+
+input.addEventListener("blur", function() {
+  const originalValue = input.value.trim();
+  if(originalValue === "") return;
+  
+  const fixedValue = autoFixUrl(originalValue);
+  if(fixedValue !== originalValue) {
+    input.value = fixedValue;
+    if(isGenerated) {
+      renderQR();
+    }
+  }
+});
+
+input.addEventListener("keypress", function(event) {
+  if(event.key === "Enter") {
+    event.preventDefault();
+    generateQR();
+  }
+});
+
+input.addEventListener("input",()=>{
+  clearBtn.style.display=input.value.length ? "flex":"none";
+});
+
+clearBtn.addEventListener("click",()=>{
+  input.value="";
+  clearBtn.style.display="none";
+  document.getElementById("qrcode").innerHTML="";
+  isGenerated=false;
+  
+  // Hide download button
+  const downloadBtn = document.getElementById("downloadBtn");
+  downloadBtn.classList.remove("generated");
+  
+  // Hide options row (back to hidden but space remains)
+  const optionsRow = document.getElementById("optionsRow");
+  optionsRow.classList.remove("generated");
+  optionsRow.classList.add("init-hidden");
+});
+
+// Popup functionality
+const popup=document.getElementById("popup");
+const infoBtn=document.getElementById("infoBtn");
+
+infoBtn.addEventListener("click",(e)=>{
+  e.stopPropagation();
+  popup.classList.toggle("show");
+});
+
+document.addEventListener("click",()=>{
+  popup.classList.remove("show");
+});
+
+function getProcessedText() {
+  const rawText = input.value.trim();
+  if(!rawText) return "";
+  return autoFixUrl(rawText);
+}
+
+function renderQR(){
+  const text = getProcessedText();
+  if(!text) return;
+
+  const size = parseInt(document.getElementById("size").value);
+  const level = document.getElementById("level").value;
+
+  const box = document.getElementById("qrcode");
+  box.innerHTML = "";
+
+  new QRCode(box,{
+    text: text,
+    width: size,
+    height: size,
+    colorDark: "#000",
+    colorLight: "#fff",
+    correctLevel: QRCode.CorrectLevel[level]
+  });
+}
+
+function generateQR(){
+  const rawText = input.value.trim();
+  if(!rawText) return;
+  
+  const fixedText = autoFixUrl(rawText);
+  if(fixedText !== rawText) {
+    input.value = fixedText;
+  }
+
+  isGenerated = true;
+  
+  // Show download button
+  const downloadBtn = document.getElementById("downloadBtn");
+  downloadBtn.classList.add("generated");
+  
+  // Show options row (make visible but space was already there)
+  const optionsRow = document.getElementById("optionsRow");
+  optionsRow.classList.remove("init-hidden");
+  optionsRow.classList.add("generated");
+
+  renderQR();
+}
+
+// Options change listeners - automatically update QR if generated
+document.getElementById("level").addEventListener("change",()=>{
+  if(isGenerated) renderQR();
+});
+
+document.getElementById("size").addEventListener("change",()=>{
+  if(isGenerated) renderQR();
+});
+
+function downloadQR(){
+  const canvas = document.querySelector("#qrcode canvas");
+  if(!canvas) return alert("Generate QR first");
+
+  const pad = 24;
+  const newCanvas = document.createElement("canvas");
+
+  newCanvas.width = canvas.width + pad * 2;
+  newCanvas.height = canvas.height + pad * 2;
+
+  const ctx = newCanvas.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+  ctx.drawImage(canvas, pad, pad);
+
+  const a = document.createElement("a");
+  a.download = "qrcode.png";
+  a.href = newCanvas.toDataURL("image/png");
+  a.click();
+}
+
+</script>
+
+</body>
+</html>
